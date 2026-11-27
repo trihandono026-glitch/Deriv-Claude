@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Deriv Auto Bot — Risk Controlled</title>
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --card: #141b24;
+      --border: #243041;
+      --text: #e8eef7;
+      --muted: #8b9cb3;
+      --accent: #00c9a7;
+      --danger: #ff5c5c;
+      --warning: #ffb020;
+      --success: #00c9a7;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 16px;
+      line-height: 1.45;
+    }
+    .container { max-width: 960px; margin: 0 auto; }
+    h1 { font-size: 1.4rem; margin-bottom: 4px; }
+    .subtitle { color: var(--muted); font-size: 0.9rem; margin-bottom: 18px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 14px;
+    }
+    .card h2 {
+      font-size: 0.85rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    @media (max-width: 640px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    label {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    input, select {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.95rem;
+    }
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+    button {
+      border: none;
+      border-radius: 8px;
+      padding: 10px 16px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-primary { background: var(--accent); color: #04120e; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-secondary { background: var(--border); color: var(--text); }
+    .status {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.9rem;
+      margin-top: 12px;
+    }
+    .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+    .dot.on { background: var(--success); box-shadow: 0 0 8px var(--success); }
+    .dot.err { background: var(--danger); }
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 10px;
+    }
+    @media (max-width: 640px) {
+      .stats { grid-template-columns: 1fr 1fr; }
+    }
+    .stat {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 10px;
+      text-align: center;
+    }
+    .stat .label { font-size: 0.72rem; color: var(--muted); }
+    .stat .value { font-size: 1.1rem; font-weight: 700; margin-top: 2px; }
+    .log {
+      background: var(--bg);
+      border-radius: 8px;
+      padding: 10px;
+      height: 280px;
+      overflow-y: auto;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      font-size: 0.78rem;
+    }
+    .log-line { padding: 3px 0; border-bottom: 1px solid #1a2330; }
+    .log-line.win { color: var(--success); }
+    .log-line.loss { color: var(--danger); }
+    .log-line.info { color: var(--muted); }
+    .log-line.warn { color: var(--warning); }
+    .warning-box {
+      background: #1f180c;
+      border: 1px solid #5a4518;
+      color: #ffd78a;
+      border-radius: 8px;
+      padding: 12px 14px;
+      font-size: 0.85rem;
+      margin-bottom: 14px;
+    }
+    .tip {
+      background: #0f1f1c;
+      border: 1px solid #1a3d36;
+      color: #9be7d4;
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 0.84rem;
+      margin-bottom: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Deriv Auto Bot — Risk Controlled</h1>
+    <p class="subtitle">Fokus survivability + profit control · Bukan martingale</p>
+
+    <div class="warning-box">
+      <strong>Penting:</strong> Tidak ada strategi yang menjamin profit di Deriv.
+      Bot ini dibuat agar <strong>tidak cepat meledak</strong>. Gunakan <strong>akun Demo</strong> dulu.
+      Token hanya diisi di browser Anda.
+    </div>
+
+    <div class="tip">
+      <strong>Rekomendasi setting profit-oriented:</strong><br>
+      • Stake kecil (1–2% modal per trade)<br>
+      • Duration 3–5 ticks<br>
+      • Stop Loss harian ketat (contoh 3–5%)<br>
+      • Take Profit harian (contoh 5–8%) → stop kalau sudah tercapai<br>
+      • Max 15–20 trade per sesi
+    </div>
+
+    <!-- Login -->
+    <div class="card">
+      <h2>Login</h2>
+      <div class="grid">
+        <div>
+          <label>App ID</label>
+          <input id="appId" type="text" placeholder="App ID Anda" />
+        </div>
+        <div>
+          <label>API Token (PAT)</label>
+          <input id="token" type="password" placeholder="Paste token di sini" />
+        </div>
+      </div>
+      <div class="row">
+        <button class="btn-primary" id="btnConnect" onclick="connect()">Connect</button>
+        <button class="btn-secondary" id="btnDisconnect" onclick="disconnect()" disabled>Disconnect</button>
+      </div>
+      <div class="status">
+        <span class="dot" id="statusDot"></span>
+        <span id="statusText">Belum terhubung</span>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="card">
+      <h2>Pengaturan Trade (Risk Controlled)</h2>
+      <div class="grid">
+        <div>
+          <label>Symbol</label>
+          <select id="symbol">
+            <option value="R_75" selected>Volatility 75 Index</option>
+            <option value="R_100">Volatility 100 Index</option>
+            <option value="R_50">Volatility 50 Index</option>
+            <option value="R_25">Volatility 25 Index</option>
+            <option value="R_10">Volatility 10 Index</option>
+            <option value="1HZ75V">Volatility 75 (1s)</option>
+            <option value="1HZ100V">Volatility 100 (1s)</option>
+          </select>
+        </div>
+        <div>
+          <label>Strategi</label>
+          <select id="strategy">
+            <option value="rise_fall" selected>Rise / Fall (Recommended)</option>
+            <option value="even_odd">Even / Odd (Digit)</option>
+          </select>
+        </div>
+        <div>
+          <label>Stake (USD) — tetap, tidak naik</label>
+          <input id="stake" type="number" value="1" min="0.35" step="0.01" />
+        </div>
+        <div>
+          <label>Duration (ticks)</label>
+          <input id="duration" type="number" value="3" min="1" max="10" />
+        </div>
+        <div>
+          <label>Max Trade per sesi</label>
+          <input id="maxTrades" type="number" value="15" min="1" max="100" />
+        </div>
+        <div>
+          <label>Stop Loss Session (USD)</label>
+          <input id="stopLoss" type="number" value="5" min="0.5" step="0.01" />
+        </div>
+        <div>
+          <label>Take Profit Session (USD)</label>
+          <input id="takeProfit" type="number" value="8" min="0.5" step="0.01" />
+        </div>
+        <div>
+          <label>Delay antar trade (detik)</label>
+          <input id="delaySec" type="number" value="3" min="1" max="30" />
+        </div>
+      </div>
+      <div class="row">
+        <button class="btn-primary" id="btnStart" onclick="startBot()" disabled>Start Auto</button>
+        <button class="btn-danger" id="btnStop" onclick="stopBot()" disabled>Stop</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="card">
+      <h2>Status & Statistik Session</h2>
+      <div class="stats">
+        <div class="stat">
+          <div class="label">Balance</div>
+          <div class="value" id="balValue">—</div>
+        </div>
+        <div class="stat">
+          <div class="label">Profit Session</div>
+          <div class="value" id="profitValue">0.00</div>
+        </div>
+        <div class="stat">
+          <div class="label">Wins / Losses</div>
+          <div class="value" id="wlValue">0 / 0</div>
+        </div>
+        <div class="stat">
+          <div class="label">Trades</div>
+          <div class="value" id="tradeCount">0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Log -->
+    <div class="card">
+      <h2>Log</h2>
+      <div class="log" id="log"></div>
+    </div>
+  </div>
+
+  <script>
+    let ws = null;
+    let authorized = false;
+    let running = false;
+    let currency = "USD";
+    let loginid = "";
+    let balance = 0;
+    let sessionProfit = 0;
+    let wins = 0;
+    let losses = 0;
+    let tradeCount = 0;
+    let pendingContract = null;
+    let reqId = 1;
+    let lastDirection = null;
+
+    function log(msg, type = "info") {
+      const el = document.getElementById("log");
+      const line = document.createElement("div");
+      line.className = "log-line " + type;
+      const time = new Date().toLocaleTimeString("id-ID");
+      line.textContent = `[${time}] ${msg}`;
+      el.prepend(line);
+    }
+
+    function setStatus(text, state) {
+      document.getElementById("statusText").textContent = text;
+      const dot = document.getElementById("statusDot");
+      dot.className = "dot" + (state === "on" ? " on" : state === "err" ? " err" : "");
+    }
+
+    function updateStats() {
+      document.getElementById("balValue").textContent = balance.toFixed(2) + " " + currency;
+      const pEl = document.getElementById("profitValue");
+      pEl.textContent = (sessionProfit >= 0 ? "+" : "") + sessionProfit.toFixed(2);
+      pEl.style.color = sessionProfit >= 0 ? "var(--success)" : "var(--danger)";
+      document.getElementById("wlValue").textContent = wins + " / " + losses;
+      document.getElementById("tradeCount").textContent = tradeCount;
+    }
+
+    function nextReqId() {
+      return reqId++;
+    }
+
+    function connect() {
+      const appId = document.getElementById("appId").value.trim();
+      const token = document.getElementById("token").value.trim();
+
+      if (!appId || !token) {
+        alert("Isi App ID dan Token dulu.");
+        return;
+      }
+
+      if (ws) {
+        try { ws.close(); } catch (e) {}
+      }
+
+      setStatus("Menghubungkan...", "");
+      log("Connecting...");
+
+      const url = `wss://ws.derivws.com/websockets/v3?app_id=${encodeURIComponent(appId)}`;
+      ws = new WebSocket(url);
+
+      ws.onopen = () => {
+        log("WebSocket connected. Authorizing...");
+        send({ authorize: token });
+      };
+
+      ws.onmessage = (event) => {
+        let data;
+        try { data = JSON.parse(event.data); } catch (e) { return; }
+        handleMessage(data);
+      };
+
+      ws.onerror = () => {
+        setStatus("Error koneksi", "err");
+        log("WebSocket error", "warn");
+      };
+
+      ws.onclose = () => {
+        authorized = false;
+        running = false;
+        setStatus("Terputus", "err");
+        document.getElementById("btnConnect").disabled = false;
+        document.getElementById("btnDisconnect").disabled = true;
+        document.getElementById("btnStart").disabled = true;
+        document.getElementById("btnStop").disabled = true;
+        log("Koneksi ditutup", "warn");
+      };
+    }
+
+    function disconnect() {
+      running = false;
+      if (ws) {
+        try { ws.close(); } catch (e) {}
+        ws = null;
+      }
+      authorized = false;
+      setStatus("Disconnected", "");
+      document.getElementById("btnConnect").disabled = false;
+      document.getElementById("btnDisconnect").disabled = true;
+      document.getElementById("btnStart").disabled = true;
+      document.getElementById("btnStop").disabled = true;
+    }
+
+    function send(obj) {
+      if (!ws || ws.readyState !== WebSocket.OPEN) return;
+      if (!obj.req_id) obj.req_id = nextReqId();
+      ws.send(JSON.stringify(obj));
+    }
+
+    function handleMessage(data) {
+      if (data.error) {
+        log("Error: " + (data.error.message || JSON.stringify(data.error)), "warn");
+        if (data.msg_type === "authorize") {
+          setStatus("Authorize gagal", "err");
+        }
+        if (running && (data.msg_type === "buy" || data.msg_type === "proposal")) {
+          scheduleNextTrade();
+        }
+        return;
+      }
+
+      switch (data.msg_type) {
+        case "authorize":
+          onAuthorize(data.authorize);
+          break;
+        case "balance":
+          if (data.balance) {
+            balance = parseFloat(data.balance.balance);
+            currency = data.balance.currency || currency;
+            updateStats();
+          }
+          break;
+        case "proposal":
+          onProposal(data);
+          break;
+        case "buy":
+          onBuy(data.buy);
+          break;
+        case "proposal_open_contract":
+          onContractUpdate(data.proposal_open_contract);
+          break;
+      }
+    }
+
+    function onAuthorize(auth) {
+      authorized = true;
+      loginid = auth.loginid;
+      balance = parseFloat(auth.balance);
+      currency = auth.currency || "USD";
+      setStatus("Connected · " + loginid, "on");
+      log("Authorized: " + loginid + " | Balance: " + balance + " " + currency, "win");
+      updateStats();
+
+      document.getElementById("btnConnect").disabled = true;
+      document.getElementById("btnDisconnect").disabled = false;
+      document.getElementById("btnStart").disabled = false;
+
+      send({ balance: 1, subscribe: 1 });
+    }
+
+    function startBot() {
+      if (!authorized || running) return;
+
+      const stake = parseFloat(document.getElementById("stake").value);
+      const stopLoss = parseFloat(document.getElementById("stopLoss").value);
+      const takeProfit = parseFloat(document.getElementById("takeProfit").value);
+
+      if (isNaN(stake) || stake <= 0) {
+        alert("Stake tidak valid");
+        return;
+      }
+      if (isNaN(stopLoss) || stopLoss <= 0) {
+        alert("Stop Loss wajib diisi dan > 0");
+        return;
+      }
+      if (isNaN(takeProfit) || takeProfit <= 0) {
+        alert("Take Profit wajib diisi dan > 0");
+        return;
+      }
+
+      running = true;
+      sessionProfit = 0;
+      wins = 0;
+      losses = 0;
+      tradeCount = 0;
+      lastDirection = null;
+      updateStats();
+
+      document.getElementById("btnStart").disabled = true;
+      document.getElementById("btnStop").disabled = false;
+
+      log("=== BOT STARTED (Risk Controlled) ===", "win");
+      log("SL: " + stopLoss + " | TP: " + takeProfit + " | Stake tetap: " + stake, "info");
+      placeNextTrade();
+    }
+
+    function stopBot() {
+      running = false;
+      pendingContract = null;
+      document.getElementById("btnStart").disabled = !authorized;
+      document.getElementById("btnStop").disabled = true;
+      log("=== BOT STOPPED ===", "warn");
+    }
+
+    function placeNextTrade() {
+      if (!running || !authorized) return;
+
+      const maxTrades = parseInt(document.getElementById("maxTrades").value, 10) || 15;
+      const stopLoss = parseFloat(document.getElementById("stopLoss").value);
+      const takeProfit = parseFloat(document.getElementById("takeProfit").value);
+
+      if (tradeCount >= maxTrades) {
+        log("Max trades tercapai. Stop.", "warn");
+        stopBot();
+        return;
+      }
+      if (sessionProfit <= -stopLoss) {
+        log("Stop Loss tercapai (" + sessionProfit.toFixed(2) + "). Stop.", "loss");
+        stopBot();
+        return;
+      }
+      if (sessionProfit >= takeProfit) {
+        log("Take Profit tercapai (" + sessionProfit.toFixed(2) + "). Stop.", "win");
+        stopBot();
+        return;
+      }
+
+      const symbol = document.getElementById("symbol").value;
+      const strategy = document.getElementById("strategy").value;
+      const stake = parseFloat(document.getElementById("stake").value);
+      const duration = parseInt(document.getElementById("duration").value, 10) || 3;
+
+      let contract_type;
+
+      if (strategy === "even_odd") {
+        contract_type = (lastDirection === "DIGITEVEN") ? "DIGITODD" : "DIGITEVEN";
+        lastDirection = contract_type;
+      } else {
+        contract_type = (lastDirection === "CALL") ? "PUT" : "CALL";
+        lastDirection = contract_type;
+      }
+
+      log("→ " + contract_type + " | " + symbol + " | stake " + stake + " | " + duration + " ticks");
+
+      send({
+        proposal: 1,
+        amount: stake,
+        basis: "stake",
+        contract_type: contract_type,
+        currency: currency,
+        duration: duration,
+        duration_unit: "t",
+        symbol: symbol
+      });
+    }
+
+    function onProposal(data) {
+      if (!running) return;
+      if (!data.proposal || !data.proposal.id) {
+        log("Proposal gagal", "warn");
+        scheduleNextTrade();
+        return;
+      }
+
+      const proposalId = data.proposal.id;
+      const askPrice = data.proposal.ask_price;
+
+      send({
+        buy: proposalId,
+        price: askPrice
+      });
+    }
+
+    function onBuy(buy) {
+      if (!buy) return;
+      tradeCount++;
+      updateStats();
+
+      const contractId = buy.contract_id;
+      pendingContract = contractId;
+      log("Contract #" + contractId + " dibeli | price " + buy.buy_price, "info");
+
+      send({
+        proposal_open_contract: 1,
+        contract_id: contractId,
+        subscribe: 1
+      });
+    }
+
+    function onContractUpdate(poc) {
+      if (!poc) return;
+      if (!poc.is_sold && !poc.is_expired) return;
+
+      const profit = parseFloat(poc.profit) || 0;
+      sessionProfit += profit;
+
+      if (profit >= 0) {
+        wins++;
+        log("WIN +" + profit.toFixed(2) + " | Session: " + sessionProfit.toFixed(2), "win");
+      } else {
+        losses++;
+        log("LOSS " + profit.toFixed(2) + " | Session: " + sessionProfit.toFixed(2), "loss");
+      }
+      updateStats();
+      pendingContract = null;
+
+      if (running) scheduleNextTrade();
+    }
+
+    function scheduleNextTrade() {
+      const delay = (parseInt(document.getElementById("delaySec").value, 10) || 3) * 1000;
+      setTimeout(() => {
+        if (running) placeNextTrade();
+      }, delay);
+    }
+  </script>
+</body>
+</html>
